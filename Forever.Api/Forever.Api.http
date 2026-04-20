@@ -1,0 +1,6 @@
+@Forever.Api_HostAddress = http://localhost:5027
+
+GET {{Forever.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+
+appsettings.Development.json
+
+*.user
+*.suo
+*.cache
+*.pdb
+
+node_modules/
+
+Logs/
+*.log
