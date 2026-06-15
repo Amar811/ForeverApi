@@ -1,9 +1,15 @@
 using AuthDemo.Api.Data;
+using Forever.Api.Authentication;
+using Forever.Api.Configuration;
+using Forever.Api.Extensions;
 using Forever.Api.Helpers;
-using Forever.Api.Interfaces;
+using Forever.Api.Interfaces.AuthService;
+using Forever.Api.Interfaces.Product;
+using Forever.Api.Interfaces.User;
 using Forever.Api.Middleware;
-using Forever.Api.Repositories;
-using Forever.Api.Services;
+using Forever.Api.Repositories.User;
+using Forever.Api.Services.AuthService;
+using Forever.Api.Services.Product;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -39,30 +45,43 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 //JWT Authentication Configuration
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddJwtBearer(options =>
+//    {
+//        options.TokenValidationParameters = new TokenValidationParameters
+//        {
+//            ValidateIssuer = true,
+//            ValidateAudience = true,
+//            ValidateLifetime = true,
+//            ValidateIssuerSigningKey = true,
 
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+//            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+//            ValidAudience = builder.Configuration["Jwt:Audience"],
 
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-            )
-        };
-    });
+//            IssuerSigningKey = new SymmetricSecurityKey(
+//                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
+//            )
+//        };
+//    });
 
 // Dependency Injection Registration
 
-builder.Services.AddScoped<IJwtHelper, JwtHelper>();
+//builder.Services.AddScoped<IJwtHelper, JwtHelper>();
+//builder.Services.AddScoped<IUserRepository, UserRepository>();
+//builder.Services.AddScoped<IAuthService, AuthService>();
+
+
+
+// ------------------------------------ JWT With Policies ----------------------------------------
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddPolicyAuthorization();
+builder.Services.AddScoped<IJwtTokenGenerator,JwtTokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+
 
 
 // Authorize button

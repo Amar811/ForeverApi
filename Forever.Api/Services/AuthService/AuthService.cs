@@ -1,28 +1,34 @@
 ﻿using AuthDemo.Api.Data;
-using AuthDemo.Api.DTOs;
-using AuthDemo.Api.Models;
-using Forever.Api.DTOs;
-using Forever.Api.Interfaces;
+using Forever.Api.Authentication;
+using Forever.Api.DTOs.User;
+using Forever.Api.Helpers;
+using Forever.Api.Interfaces.AuthService;
+using Forever.Api.Interfaces.User;
 using Forever.Api.Models;
+using Forever.Api.Models.RefreshToken;
+using Forever.Api.Models.User;
 
-namespace Forever.Api.Services
+namespace Forever.Api.Services.AuthService
 {
     public class AuthService:IAuthService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IJwtHelper _jwtHelper;
+        //private readonly IJwtHelper _jwtHelper;
+        private readonly IJwtTokenGenerator _jwttokengenerator;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
              IUserRepository userRepository, 
-             IJwtHelper jwtHelper,
+             //IJwtHelper jwtHelper,
+             IJwtTokenGenerator jwttokengenerator,
              ApplicationDbContext context,
              ILogger<AuthService> logger
             )
         {
             _userRepository = userRepository;
-            _jwtHelper = jwtHelper;
+            //_jwtHelper = jwtHelper;
+            _jwttokengenerator = jwttokengenerator;
             _context = context;
             _logger = logger;
         }
@@ -80,7 +86,8 @@ namespace Forever.Api.Services
                 };
             }
 
-            var token = _jwtHelper.GenerateToken(user);
+            //var token = _jwtHelper.GenerateToken(user);
+            var token = _jwttokengenerator.GenerateToken(user);
 
             //return new LoginResponseDto
             //{
@@ -92,7 +99,8 @@ namespace Forever.Api.Services
             //};
 
             _logger.LogInformation("Access token generated for UserId: {UserId}", user.UserId);
-            var refreshToken = _jwtHelper.GenerateRefreshToken();
+            //var refreshToken = _jwtHelper.GenerateRefreshToken();
+            var refreshToken = _jwttokengenerator.GenerateRefreshToken();
 
             var refreshTokenEntity = new RefreshToken
             { 
@@ -148,7 +156,8 @@ namespace Forever.Api.Services
                 };
             }
 
-            var newAccessToken = _jwtHelper.GenerateToken(user);
+            //var newAccessToken = _jwtHelper.GenerateToken(user);
+            var newAccessToken = _jwttokengenerator.GenerateToken(user);
 
             _logger.LogInformation("New access token generated for UserId: {UserId}", user.UserId);
             return new LoginResponseDto
