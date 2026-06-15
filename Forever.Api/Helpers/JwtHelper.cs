@@ -1,5 +1,5 @@
-﻿using Forever.Api.Interfaces;
-using Forever.Api.Models.User;
+﻿using AuthDemo.Api.Models;
+using Forever.Api.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

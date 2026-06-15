@@ -1,4 +1,4 @@
-﻿using Forever.Api.Models.User;
+﻿using AuthDemo.Api.Models;
 
 namespace Forever.Api.Interfaces
 {
