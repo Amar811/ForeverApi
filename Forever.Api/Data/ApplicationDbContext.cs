@@ -1,4 +1,5 @@
 ﻿
+using Forever.Api.Models;
 using Forever.Api.Models.Product;
 using Forever.Api.Models.RefreshToken;
 using Forever.Api.Models.User;
