@@ -2,7 +2,6 @@ using AuthDemo.Api.Data;
 using Forever.Api.Authentication;
 using Forever.Api.Configuration;
 using Forever.Api.Extensions;
-using Forever.Api.Helpers;
 using Forever.Api.Interfaces.AuthService;
 using Forever.Api.Interfaces.Product;
 using Forever.Api.Interfaces.User;

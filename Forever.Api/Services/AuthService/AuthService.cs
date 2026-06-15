@@ -1,7 +1,6 @@
 ﻿using AuthDemo.Api.Data;
 using Forever.Api.Authentication;
 using Forever.Api.DTOs.User;
-using Forever.Api.Helpers;
 using Forever.Api.Interfaces.AuthService;
 using Forever.Api.Interfaces.User;
 using Forever.Api.Models;
@@ -13,21 +12,18 @@ namespace Forever.Api.Services.AuthService
     public class AuthService:IAuthService
     {
         private readonly IUserRepository _userRepository;
-        //private readonly IJwtHelper _jwtHelper;
         private readonly IJwtTokenGenerator _jwttokengenerator;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
              IUserRepository userRepository, 
-             //IJwtHelper jwtHelper,
              IJwtTokenGenerator jwttokengenerator,
              ApplicationDbContext context,
              ILogger<AuthService> logger
             )
         {
             _userRepository = userRepository;
-            //_jwtHelper = jwtHelper;
             _jwttokengenerator = jwttokengenerator;
             _context = context;
             _logger = logger;
@@ -85,8 +81,6 @@ namespace Forever.Api.Services.AuthService
                     Message = "Invalid Password"
                 };
             }
-
-            //var token = _jwtHelper.GenerateToken(user);
             var token = _jwttokengenerator.GenerateToken(user);
 
             //return new LoginResponseDto
