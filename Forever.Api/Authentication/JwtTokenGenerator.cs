@@ -18,55 +18,35 @@ namespace Forever.Api.Authentication
             _jwtSettings = jwtOption.Value;
         }
 
-       
-
         public string GenerateToken(Users user)
         {
             var claims = new List<Claim>
             {
-                new Claim(
-                      JwtConstants.UserId,
-                      user.UserId.ToString()
-                ),
-
-                new Claim(
-                    JwtConstants.Email,
-                    user.Email.ToString()
-                ),
-
-                new Claim (
-                    ClaimTypes.Role,
-                    user.Role
-                ),
+                new Claim(JwtConstants.UserId, user.UserId.ToString()),
+                new Claim(JwtConstants.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, user.Role ?? string.Empty),
             };
 
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(
-                    _jwtSettings.Key
-            ));
-
-            var credentials =
-           new SigningCredentials(
-           key,
-           SecurityAlgorithms.HmacSha256);
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-              issuer: _jwtSettings.Issuer,
-              audience: _jwtSettings.Audience,
-              claims: claims,
-              expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
-              signingCredentials: credentials
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+                signingCredentials: credentials
             );
 
-            return new JwtSecurityTokenHandler()
-                .WriteToken(token);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         public string GenerateRefreshToken()
         {
-            return Guid.NewGuid().ToString();
+            // cryptographically secure random bytes, returned as base64
+            var randomBytes = RandomNumberGenerator.GetBytes(64);
+            return Convert.ToBase64String(randomBytes);
         }
-
     }
 }

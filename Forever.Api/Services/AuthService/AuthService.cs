@@ -1,34 +1,38 @@
 ﻿using AuthDemo.Api.Data;
 using Forever.Api.Authentication;
+using Forever.Api.Configuration;
 using Forever.Api.DTOs.User;
 using Forever.Api.Interfaces.AuthService;
 using Forever.Api.Interfaces.User;
 using Forever.Api.Models;
 using Forever.Api.Models.RefreshToken;
 using Forever.Api.Models.User;
+using Microsoft.Extensions.Options;
 
 namespace Forever.Api.Services.AuthService
 {
-    public class AuthService:IAuthService
+    public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
         private readonly IJwtTokenGenerator _jwttokengenerator;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AuthService> _logger;
+        private readonly JwtSettings _jwtSettings;
 
         public AuthService(
-             IUserRepository userRepository, 
+             IUserRepository userRepository,
              IJwtTokenGenerator jwttokengenerator,
              ApplicationDbContext context,
-             ILogger<AuthService> logger
+             ILogger<AuthService> logger,
+             IOptions<JwtSettings> jwtOptions
             )
         {
             _userRepository = userRepository;
             _jwttokengenerator = jwttokengenerator;
             _context = context;
             _logger = logger;
+            _jwtSettings = jwtOptions.Value;
         }
-
 
         public string Register(RegisterRequestDto request)
         {
@@ -46,7 +50,6 @@ namespace Forever.Api.Services.AuthService
                 Username = request.Username,
                 Email = request.Email,
                 PashwordHash = request.PashwordHash,
-                //PashwordHash = BCrypt.Net.BCrypt.HashPassword(request.PashwordHash),
                 Role = "User"
             };
 
@@ -57,50 +60,33 @@ namespace Forever.Api.Services.AuthService
             return "Registration Successful";
         }
 
-        public  LoginResponseDto Login(LoginRequestDto login)
+        public LoginResponseDto Login(LoginRequestDto login)
         {
             _logger.LogInformation("Login attempt started for Email: {Email}", login.Email);
-            var user =  _userRepository.GetUserByEmail(login.Email);
+            var user = _userRepository.GetUserByEmail(login.Email);
 
-            if(user == null)
+            if (user == null)
             {
                 _logger.LogWarning("Login failed. User not found for Email: {Email}", login.Email);
-
-                return new LoginResponseDto
-                {
-                    Message = "User not found"
-                };
+                return new LoginResponseDto { Message = "User not found" };
             }
 
-            if(user.PashwordHash != login.PashwordHash)
+            if (user.PashwordHash != login.PashwordHash)
             {
                 _logger.LogWarning("Login failed. Invalid password for Email: {Email}", login.Email);
-
-                return new LoginResponseDto
-                {
-                    Message = "Invalid Password"
-                };
+                return new LoginResponseDto { Message = "Invalid Password" };
             }
+
             var token = _jwttokengenerator.GenerateToken(user);
-
-            //return new LoginResponseDto
-            //{
-            //    Token = token,
-            //    Message = "Login SuccessFul",
-            //    Username = user.Username,
-            //    Email = user.Email,
-            //    Role = user.Role
-            //};
-
             _logger.LogInformation("Access token generated for UserId: {UserId}", user.UserId);
-            //var refreshToken = _jwtHelper.GenerateRefreshToken();
+
             var refreshToken = _jwttokengenerator.GenerateRefreshToken();
 
             var refreshTokenEntity = new RefreshToken
-            { 
+            {
                 UserId = user.UserId,
                 Token = refreshToken,
-                ExpiryDate = DateTime.Now.AddDays(1),
+                ExpiryDate = DateTime.Now.AddDays(_jwtSettings.RefreshTokenExpiryDays),
                 IsRevoked = false,
                 CreatedDate = DateTime.Now,
             };
@@ -114,13 +100,11 @@ namespace Forever.Api.Services.AuthService
                 Token = token,
                 RefreshToken = refreshToken,
                 Message = "Login Successful",
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.Role
+                //Username = user.Username,
+                //Email = user.Email,
+                //Role = user.Role
             };
-
         }
-
 
         public LoginResponseDto RefreshToken(RefreshTokenRequestDTO request)
         {
@@ -129,13 +113,10 @@ namespace Forever.Api.Services.AuthService
               && !x.IsRevoked && x.ExpiryDate > DateTime.Now
             );
 
-            if(storedToken == null)
+            if (storedToken == null)
             {
                 _logger.LogWarning("Invalid or expired refresh token used");
-                return new LoginResponseDto
-                {
-                    Message = "Invalid Refresh Token"
-                };
+                return new LoginResponseDto { Message = "Invalid Refresh Token" };
             }
 
             var user = _context.Users.FirstOrDefault(x => x.UserId == storedToken.UserId);
@@ -143,32 +124,25 @@ namespace Forever.Api.Services.AuthService
             if (user == null)
             {
                 _logger.LogWarning("User not found for refresh token request");
-
-                return new LoginResponseDto
-                {
-                    Message = "User not found"
-                };
+                return new LoginResponseDto { Message = "User not found" };
             }
 
-            //var newAccessToken = _jwtHelper.GenerateToken(user);
             var newAccessToken = _jwttokengenerator.GenerateToken(user);
-
             _logger.LogInformation("New access token generated for UserId: {UserId}", user.UserId);
             return new LoginResponseDto
             {
                 Token = newAccessToken,
                 RefreshToken = request.RefreshToken,
                 Message = "New access token generated",
-                Username = user.Username,
-                Role = user.Role
+                //Username = user.Username,
+                //Role = user.Role
             };
-
         }
 
         public string Logout(string refreshToken)
         {
             _logger.LogInformation("Logout request started");
-            var token = _context.RefreshTokens.FirstOrDefault(x => x.Token ==  refreshToken);
+            var token = _context.RefreshTokens.FirstOrDefault(x => x.Token == refreshToken);
 
             if (token == null)
             {
@@ -182,6 +156,5 @@ namespace Forever.Api.Services.AuthService
             _logger.LogInformation("Logout successful. Refresh token revoked");
             return "Logout successful";
         }
-
     }
 }

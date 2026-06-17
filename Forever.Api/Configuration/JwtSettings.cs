@@ -8,6 +8,10 @@
 
         public string Audience { get; set; }
 
+        // Access token lifetime in minutes
         public int ExpiryMinutes { get; set; }
+
+        // Refresh token lifetime in days
+        public int RefreshTokenExpiryDays { get; set; }
     }
 }

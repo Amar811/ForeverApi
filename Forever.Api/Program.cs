@@ -1,4 +1,3 @@
-using AuthDemo.Api.Data;
 using Forever.Api.Authentication;
 using Forever.Api.Configuration;
 using Forever.Api.Extensions;
@@ -9,135 +8,85 @@ using Forever.Api.Middleware;
 using Forever.Api.Repositories.User;
 using Forever.Api.Services.AuthService;
 using Forever.Api.Services.Product;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Serilog;
-using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Forever.Api.Models.User;
+using Microsoft.AspNetCore.HttpOverrides;
+using AuthDemo.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// logger 
+#region Serilog
 builder.Host.UseSerilog((context, configuration) =>
 {
     configuration
         .MinimumLevel.Information()
         .WriteTo.Console()
-        .WriteTo.File(
-            "Logs/log.txt",
-            rollingInterval: RollingInterval.Day,
-            shared: true
-        );
+        .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day, shared: true);
 });
+#endregion
 
-// Add services to the container.
-
+#region Services
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-////Database 
+// Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//JWT Authentication Configuration
+// CORS
+builder.Services.AddReactCors(builder.Configuration);
 
-//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//    .AddJwtBearer(options =>
-//    {
-//        options.TokenValidationParameters = new TokenValidationParameters
-//        {
-//            ValidateIssuer = true,
-//            ValidateAudience = true,
-//            ValidateLifetime = true,
-//            ValidateIssuerSigningKey = true,
-
-//            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-//            ValidAudience = builder.Configuration["Jwt:Audience"],
-
-//            IssuerSigningKey = new SymmetricSecurityKey(
-//                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-//            )
-//        };
-//    });
-
-// Dependency Injection Registration
-
-//builder.Services.AddScoped<IJwtHelper, JwtHelper>();
-//builder.Services.AddScoped<IUserRepository, UserRepository>();
-//builder.Services.AddScoped<IAuthService, AuthService>();
-
-
-
-// ------------------------------------ JWT With Policies ----------------------------------------
-
+// JWT settings + authentication
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// Authorization policies
 builder.Services.AddPolicyAuthorization();
-builder.Services.AddScoped<IJwtTokenGenerator,JwtTokenGenerator>();
+
+// Swagger
+builder.Services.AddSwaggerDocumentation();
+
+// Rate limiting
+builder.Services.AddAppRateLimiting();
+
+// DI registrations
+builder.Services.AddScoped<IPasswordHasher<Users>, PasswordHasher<Users>>();
+builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
-
-
-
-// Authorize button
-
-builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "AuthDemo API",
-        Version = "v1"
-    });
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your valid token.\n\nExample: Bearer abc123"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
-
+#endregion
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+#region Middleware pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// If behind proxy/load balancer, enable forwarded headers so rate limiting by IP is accurate
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
+// Rate limiting middleware - early in pipeline
+app.UseRateLimiter();
+
+// Security and app middleware
+app.UseHttpsRedirection();
+app.UseCors(CorsExtension.ReactCorsPolicy);
+
+// Exception handling middleware
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+#endregion
 
 app.Run();
