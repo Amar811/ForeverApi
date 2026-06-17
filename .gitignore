@@ -1,15 +1,5 @@
-bin/
-obj/
-.vs/
-
-appsettings.Development.json
-
-*.user
-*.suo
-*.cache
-*.pdb
-
-node_modules/
-
-Logs/
-*.log
+# If appsettings.json was already committed:
+git rm --cached Forever.Api/appsettings.json
+git add .gitignore
+git commit -m "Remove appsettings.json from repo and add to .gitignore"
+git push

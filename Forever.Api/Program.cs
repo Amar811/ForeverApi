@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Identity;
 using Forever.Api.Models.User;
 using Microsoft.AspNetCore.HttpOverrides;
 using AuthDemo.Api.Data;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +31,12 @@ builder.Host.UseSerilog((context, configuration) =>
 
 #region Services
 builder.Services.AddControllers();
+
+// Add FluentValidation auto-validation integration
+builder.Services.AddFluentValidationAutoValidation();
+
+// Register validators from this assembly (scans your Validators folder)
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
