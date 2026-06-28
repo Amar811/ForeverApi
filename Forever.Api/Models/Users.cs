@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AuthDemo.Api.Models
+namespace Forever.Api.Models
 {
     public class Users
     {

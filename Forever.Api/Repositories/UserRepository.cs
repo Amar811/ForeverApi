@@ -1,6 +1,6 @@
 ﻿using AuthDemo.Api.Data;
-using AuthDemo.Api.Models;
 using Forever.Api.Interfaces;
+using Forever.Api.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;

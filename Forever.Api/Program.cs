@@ -1,21 +1,20 @@
-using Forever.Api.Authentication;
-using Forever.Api.Configuration;
-using Forever.Api.Extensions;
-using Forever.Api.Interfaces.AuthService;
-using Forever.Api.Interfaces.Product;
-using Forever.Api.Interfaces.User;
-using Forever.Api.Middleware;
-using Forever.Api.Repositories.User;
-using Forever.Api.Services.AuthService;
-using Forever.Api.Services.Product;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
-using Microsoft.AspNetCore.Identity;
-using Forever.Api.Models.User;
-using Microsoft.AspNetCore.HttpOverrides;
 using AuthDemo.Api.Data;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Forever.Api.Authentication;
+using Forever.Api.Configuration;
+using Forever.Api.Extensions;
+using Forever.Api.Interfaces;
+using Forever.Api.Interfaces.AuthService;
+using Forever.Api.Middleware;
+using Forever.Api.Models;
+using Forever.Api.Repositories;
+using Forever.Api.Services;
+using Forever.Api.Services.AuthService;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +63,9 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 #endregion
 
 var app = builder.Build();

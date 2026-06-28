@@ -1,6 +1,6 @@
 ﻿using Forever.Api.Configuration;
 using Forever.Api.DTOs.Product;
-using Forever.Api.Interfaces.Product;
+using Forever.Api.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +24,13 @@ namespace Forever.Api.Controllers.Product
             var userId = Convert.ToInt32(User.FindFirst("UserId")?.Value);
             var response = await _productService.AddProduct(request, userId);
             return Ok(response);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProdutWithCategory()
+        {
+            var products = await _productService.GetAllProducts();
+            return Ok(products);
         }
     }
 }
